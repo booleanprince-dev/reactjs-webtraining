@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Senior-level React architecture interview crash course" />
+  <title>React Architecture — Interview Crash Course</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .build-along{border-top:2px solid var(--orange);margin-top:58px;padding-top:38px}.build-along h3{font:normal 37px/1.05 var(--serif);letter-spacing:-.03em;margin:0 0 12px}.build-intro{max-width:660px;color:#765f51}.build-along details{border-color:#d9bda5;padding:20px 0}.build-along summary{font:normal 23px/1.2 var(--serif)}.build-along summary span{display:inline-block;background:var(--orange);color:#fff;font:700 10px var(--sans);letter-spacing:.08em;padding:6px 7px;margin-right:9px;vertical-align:middle}.build-along details p{color:#654f43;max-width:850px}.build-along pre{background:#243949;color:#f1f4ed;padding:20px;overflow:auto;font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;border-left:3px solid #f1b96b}.build-along code{font-family:inherit}.build-along em{font-style:normal;color:#a4482b;font-weight:700}
+  </style>
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="#top"><span class="mark">R</span><span>React Architecture<small>INTERVIEW CRASH COURSE</small></span></a>
+      <nav aria-label="Learning sections">
+        <a class="nav-link active" href="#start">01 — Start here</a>
+        <a class="nav-link" href="#state">02 — State placement</a>
+        <a class="nav-link" href="#structure">03 — App architecture</a>
+        <a class="nav-link" href="#data">04 — Server state</a>
+        <a class="nav-link" href="#quality">05 — Quality & scale</a>
+        <a class="nav-link" href="#challenge">06 — Coding challenge</a>
+        <a class="nav-link" href="#drills">07 — Interview drills</a>
+      </nav>
+      <div class="sidebar-foot"><a href="react-stack-best-practices.html" style="color:inherit">React stack playbook →</a><br><br><span class="pulse"></span> Senior / Tech Lead track<br><small>6–8 focused hours</small></div>
+    </aside>
+    <main id="content">
+      <header id="top" class="hero">
+        <p class="eyebrow">INTERVIEW PREP • TYPESCRIPT + REACT</p>
+        <h1>Think like the<br><em>architect</em> in the room.</h1>
+        <p class="lede">A senior-level walkthrough for explaining React architecture with clarity: state ownership, feature boundaries, production-grade async behavior, and delivery leadership.</p>
+        <div class="hero-actions"><a class="button primary" href="#start">Start the walkthrough <span>→</span></a><button class="button ghost" id="focus-toggle">Focus mode</button></div>
+        <dl class="stats"><div><dt>07</dt><dd>core modules</dd></div><div><dt>01</dt><dd>real-world exercise</dd></div><div><dt>∞</dt><dd>better answers</dd></div></dl>
+      </header>
+
+      <section id="start" class="section intro">
+        <p class="kicker">01 / YOUR OPENING POSITION</p>
+        <h2>Lead with judgement, not libraries.</h2>
+        <p>In an architecture interview, state the system boundary and the trade-off before naming a tool. You want to sound like someone who can keep a product moving as complexity grows.</p>
+        <blockquote>“I design React applications around ownership of state, independent feature boundaries, accessible behavior, and safe delivery. I put server data in a query cache, URL-shareable state in the router, local interaction state in components, and introduce a global client store only for genuinely shared workflows.”</blockquote>
+        <div class="callout"><strong>What they are evaluating</strong><span>Can you turn ambiguous product work into a maintainable system, make trade-offs explicit, and help a team ship safely?</span></div>
+        <div class="timeline"><article><b>0–15 min</b><span>Say the state-placement framework aloud.</span></article><article><b>15–35 min</b><span>Sketch feature boundaries and data flow.</span></article><article><b>35–70 min</b><span>Build the challenge’s unhappy paths first.</span></article><article><b>70–90 min</b><span>Answer interview prompts without notes.</span></article></div>
+      </section>
+
+      <section id="state" class="section">
+        <p class="kicker">02 / STATE PLACEMENT</p><h2>The decision that prevents most React complexity.</h2>
+        <p>Before selecting Redux—or any state library—classify the state by its owner and lifecycle. The state manager should follow that answer.</p>
+        <div class="state-grid">
+          <article><i class="tag amber">SERVER</i><h3>Backend owns truth</h3><p>Orders, profiles, permissions, inventory.</p><strong>TanStack Query / RTK Query</strong></article>
+          <article><i class="tag blue">URL</i><h3>Browser history owns it</h3><p>Search, page, selected tab, sort.</p><strong>React Router params</strong></article>
+          <article><i class="tag green">LOCAL</i><h3>A subtree owns it</h3><p>Form draft, open dialog, hover, input.</p><strong>useState / useReducer</strong></article>
+          <article><i class="tag purple">WORKFLOW</i><h3>Client crosses features</h3><p>Toast queue, offline draft, multi-step flow.</p><strong>Redux Toolkit / Zustand</strong></article>
+        </div>
+        <div class="code-card"><div class="code-top"><span>INTERVIEW ANSWER</span><button class="copy" data-copy="I use Redux Toolkit when cross-feature client state has complex transitions, needs predictable debugging, or must survive route changes. I do not use it as an HTTP cache by default; TanStack Query or RTK Query handles server state better.">Copy</button></div><p>“I use Redux Toolkit when cross-feature client state has complex transitions, needs predictable debugging, or must survive route changes. I do not use it as an HTTP cache by default; TanStack Query or RTK Query handles server state better.”</p></div>
+        <p class="rule"><span>Rule of thumb</span> Derived state has no owner. Compute <code>visibleOrders</code>; do not store it and create another source of truth.</p>
+      </section>
+
+      <section id="structure" class="section dark-section">
+        <p class="kicker">03 / APP ARCHITECTURE</p><h2>Organize by capability, not file type.</h2>
+        <p>A feature owns its API adapter, model, UI, orchestration, and tests. The app layer composes features. Shared code is domain-agnostic and may not depend back on a feature.</p>
+        <div class="architecture"><pre><code>src/
+ ├─ app/                  <span># providers, router, composition</span>
+ ├─ features/
+ │   └─ orders/
+ │      ├─ api/           <span># request/response adapters</span>
+ │      ├─ components/    <span># feature UI</span>
+ │      ├─ hooks/         <span># feature orchestration</span>
+ │      ├─ model/         <span># types, schemas, domain rules</span>
+ │      └─ state/         <span># only when truly warranted</span>
+ └─ shared/
+     ├─ api/  components/  lib/</code></pre>
+          <aside><h3>Boundary rules</h3><ol><li>Features can consume <code>shared</code>; shared cannot consume features.</li><li>Map raw API shapes at the API boundary.</li><li>Expose a small public surface per feature.</li><li>Extract abstractions after stable duplication emerges.</li></ol></aside></div>
+        <div class="flow"><div>URL<br><small>filters / page</small></div><b>→</b><div>Route + feature<br><small>orchestration</small></div><b>→</b><div>Query cache<br><small>remote truth</small></div><b>→</b><div>API + schema<br><small>validated boundary</small></div></div>
+      </section>
+
+      <section id="data" class="section">
+        <p class="kicker">04 / SERVER STATE</p><h2>Async work is a state machine.</h2>
+        <p>Initial loading, failure, successful empty data, successful data, and background refetching are distinct user experiences. Do not replace useful data with a full-page spinner while it refreshes.</p>
+        <div class="tabs" role="tablist" aria-label="Query lifecycle"><button role="tab" aria-selected="true" data-panel="pending">Pending</button><button role="tab" aria-selected="false" data-panel="error">Error</button><button role="tab" aria-selected="false" data-panel="success">Success</button><button role="tab" aria-selected="false" data-panel="refetch">Refetching</button></div>
+        <div class="panel" id="pending"><strong>Initial fetch</strong><p>Show a purposeful skeleton/status indicator. The user has no trustworthy content yet.</p></div><div class="panel hidden" id="error"><strong>Request failed</strong><p>Explain what failed in useful language, preserve recoverable input, log context, and offer Retry.</p></div><div class="panel hidden" id="success"><strong>Canonical result</strong><p>Render data or an intentional empty state. Never conflate an empty list with a request failure.</p></div><div class="panel hidden" id="refetch"><strong>Existing data is stale</strong><p>Keep visible content and add a subtle refreshing status. Cache identity must include every response-affecting filter.</p></div>
+        <pre class="snippet"><code><span>const</span> ordersQuery = (filters) =&gt; queryOptions({
+  queryKey: [<em>'orders'</em>, filters],
+  queryFn: ({ signal }) =&gt; ordersApi.list(filters, signal),
+  staleTime: 30_000,
+});</code></pre>
+      </section>
+
+      <section id="quality" class="section quality">
+        <p class="kicker">05 / QUALITY & SCALE</p><h2>Architecture includes the unhappy path.</h2>
+        <div class="quality-grid"><article><span>01</span><h3>Type boundaries</h3><p>Use strict TypeScript, discriminated unions for workflows, and Zod to validate untrusted runtime data.</p></article><article><span>02</span><h3>Accessible behavior</h3><p>Semantic elements, keyboard flows, focus management, meaningful async announcements.</p></article><article><span>03</span><h3>Measured performance</h3><p>Profile first. Then fix the actual bottleneck: data, bundle, render churn, CPU, or DOM size.</p></article><article><span>04</span><h3>Behavioral tests</h3><p>Use Testing Library + MSW for observable state transitions; keep E2E for critical journeys.</p></article></div>
+        <details><summary>Performance answer to rehearse</summary><p>“I start with the browser performance tools, React Profiler, Web Vitals, network waterfall, and bundle analysis. I diagnose whether it is API latency, JavaScript cost, render churn, expensive computation, or DOM size. Then I make and verify a measured improvement—rather than memoizing by instinct.”</p></details>
+      </section>
+
+      <section id="challenge" class="section challenge">
+        <p class="kicker">06 / HANDS-ON CHALLENGE</p><h2>Build an Order Operations Console.</h2>
+        <p>Timebox yourself to 2–3 hours. Narrate the state ownership decisions as you build.</p>
+        <div class="brief"><div><h3>Product brief</h3><p>Operations users search orders, filter by status, inspect an order, and update its status. A filtered URL must be shareable. The API is eventually consistent after an update.</p></div><div class="challenge-meta"><b>Stack</b><span>React · TypeScript · Router · TanStack Query</span><b>Outcome</b><span>A resilient vertical slice</span></div></div>
+        <ol class="checklist"><li><input type="checkbox" id="c1"><label for="c1">Render loading, error + retry, empty, success, and background refetch states.</label></li><li><input type="checkbox" id="c2"><label for="c2">Put <code>q</code>, <code>status</code>, and <code>page</code> in URL search params.</label></li><li><input type="checkbox" id="c3"><label for="c3">Fetch via a query layer—do not mirror the response in Redux.</label></li><li><input type="checkbox" id="c4"><label for="c4">Keep edit-dialog form state local; mutate and invalidate safely.</label></li><li><input type="checkbox" id="c5"><label for="c5">Add tests for error/retry and a successful mutation.</label></li></ol>
+        <details><summary>Reveal the expected walkthrough</summary><div class="reveal"><p><b>1. URL:</b> filters are shareable navigation state, so the router owns them.</p><p><b>2. Query:</b> orders belong in a query cache because the backend owns their truth.</p><p><b>3. Dialog:</b> selection and draft status stay in local state.</p><p><b>4. Mutation:</b> invalidate <code>['orders']</code>; favor canonical refetch over optimistic complexity until UX evidence says otherwise.</p><p><b>5. Feedback:</b> use a global toast queue only if it crosses routes or multiple features.</p></div></details>
+        <div class="build-along">
+          <p class="kicker">BUILD-ALONG / COMPLETE ANSWER</p><h3>Build it from an empty folder.</h3><p class="build-intro">Follow the steps in order. Each one is a working, explainable increment—the way a lead should plan a feature slice.</p>
+          <details open><summary><span>Step 1</span> Create the React + TypeScript project</summary><p>Use Vite for a lean client build, then install only the tools that match the ownership model.</p><pre><code>npm create vite@latest order-ops -- --template react-ts
+cd order-ops
+npm install
+npm install react-router-dom @tanstack/react-query zod
+npm install -D vitest @testing-library/react @testing-library/jest-dom msw jsdom</code></pre><p><b>Why:</b> Router owns shareable location state; TanStack Query owns server state; Zod validates runtime data. Do <em>not</em> install Redux yet—the brief has no cross-feature client workflow.</p></details>
+          <details><summary><span>Step 2</span> Create the feature boundary and domain model</summary><p>Create <code>src/features/orders/{api,components,hooks,model}</code>, then add <code>model/order.ts</code>:</p><pre><code>export type OrderStatus = 'pending' | 'processing' | 'fulfilled' | 'cancelled';
+export interface Order { id: string; reference: string; customerName: string; totalCents: number; status: OrderStatus; updatedAt: string; }
+export interface OrderFilters { q: string; status?: OrderStatus; page: number; }
+export interface OrderPage { items: Order[]; page: number; totalPages: number; }</code></pre><p><b>Say:</b> “These are our domain types, not proof that the API is trustworthy. I validate network data at the boundary next.”</p></details>
+          <details><summary><span>Step 3</span> Configure Router and Query once</summary><p>Put application-wide dependencies near the root.</p><pre><code>// src/app/providers.tsx
+const client = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
+export function AppProviders({ children }: PropsWithChildren) {
+  return &lt;QueryClientProvider client={client}&gt;{children}&lt;/QueryClientProvider&gt;;
+}
+
+// src/main.tsx
+createRoot(document.getElementById('root')!).render(
+  &lt;StrictMode&gt;&lt;BrowserRouter&gt;&lt;AppProviders&gt;&lt;OrdersPage /&gt;
+  &lt;/AppProviders&gt;&lt;/BrowserRouter&gt;&lt;/StrictMode&gt;
+);</code></pre><p><b>Why:</b> 30 seconds is just an example stale-time policy. Explain that freshness is a product decision, not a magic number.</p></details>
+          <details><summary><span>Step 4</span> Validate and translate the API boundary</summary><p>Components should never own fetch details. Validate external data before it enters the feature.</p><pre><code>const orderSchema = z.object({
+  id: z.string(), reference: z.string(), customerName: z.string(),
+  totalCents: z.number().int().nonnegative(),
+  status: z.enum(['pending', 'processing', 'fulfilled', 'cancelled']), updatedAt: z.string(),
+});
+const pageSchema = z.object({ items: z.array(orderSchema), page: z.number(), totalPages: z.number() });
+
+export async function listOrders(filters: OrderFilters, signal?: AbortSignal): Promise&lt;OrderPage&gt; {
+  const params = new URLSearchParams({ q: filters.q, page: String(filters.page) });
+  if (filters.status) params.set('status', filters.status);
+  const response = await fetch(`/api/orders?${params}`, { signal });
+  if (!response.ok) throw new Error(`Could not load orders (${response.status})`);
+  return pageSchema.parse(await response.json());
+}</code></pre></details>
+          <details><summary><span>Step 5</span> Make query keys and mutations explicit</summary><p>A query key is cache identity; include every input that changes the response.</p><pre><code>export const orderKeys = { all: ['orders'] as const,
+  list: (filters: OrderFilters) =&gt; ['orders', filters] as const };
+
+export function useOrders(filters: OrderFilters) {
+  return useQuery({ queryKey: orderKeys.list(filters),
+    queryFn: ({ signal }) =&gt; listOrders(filters, signal),
+    placeholderData: keepPreviousData, staleTime: 30_000 });
+}
+export function useUpdateOrderStatus() {
+  const client = useQueryClient();
+  return useMutation({ mutationFn: ({id, status}) =&gt; updateOrderStatus(id, status),
+    onSuccess: () =&gt; client.invalidateQueries({ queryKey: orderKeys.all }) });
+}</code></pre><p><b>Why invalidate?</b> The API is eventually consistent. Refetching canonical data is safer than optimistic complexity until latency and conflict behavior prove it necessary.</p></details>
+          <details><summary><span>Step 6</span> Put filters in the URL and render async states</summary><p>The screen coordinates owners. The hook fetches; the page handles visible behavior; temporary editing state stays local.</p><pre><code>const [params, setParams] = useSearchParams();
+const filters = { q: params.get('q') ?? '', status: params.get('status') as OrderStatus | undefined,
+  page: Math.max(1, Number(params.get('page') ?? '1')) };
+const { data, isPending, isFetching, isError, error, refetch } = useOrders(filters);
+const [selected, setSelected] = useState&lt;Order | null&gt;(null);
+
+if (isPending) return &lt;p role="status"&gt;Loading orders…&lt;/p&gt;;
+if (isError) return &lt;section role="alert"&gt;{error.message} &lt;button onClick={() =&gt; refetch()}&gt;Retry&lt;/button&gt;&lt;/section&gt;;
+// show an empty state when data.items.length === 0
+// retain the list and show “Refreshing…” when isFetching is true</code></pre><p><b>Interview point:</b> initial load and background refresh are different. Preserve useful content while refreshing.</p></details>
+          <details><summary><span>Step 7</span> Build the semantic list and local status editor</summary><p>Use a real table for tabular data. In production, prefer a tested accessible dialog primitive for focus handling.</p><pre><code>&lt;tbody&gt;{data.items.map(order =&gt; &lt;tr key={order.id}&gt;
+  &lt;td&gt;{order.reference}&lt;/td&gt;&lt;td&gt;{order.customerName}&lt;/td&gt;&lt;td&gt;{order.status}&lt;/td&gt;
+  &lt;td&gt;&lt;button onClick={() =&gt; setSelected(order)}&gt;Update status&lt;/button&gt;&lt;/td&gt;
+&lt;/tr&gt;)}&lt;/tbody&gt;
+
+{selected &amp;&amp; &lt;section role="dialog" aria-modal="true" aria-label={`Update ${selected.reference}`}&gt;
+  {statuses.map(status =&gt; &lt;button key={status} onClick={() =&gt; mutate({ id: selected.id, status })}&gt;{status}&lt;/button&gt;)}
+  &lt;button onClick={() =&gt; setSelected(null)}&gt;Cancel&lt;/button&gt;
+&lt;/section&gt;}</code></pre></details>
+          <details><summary><span>Step 8</span> Test behavior and deliver the explanation</summary><p>Use MSW at the network boundary; test what a user can observe, not hook internals.</p><pre><code>it('offers retry when the list request fails', async () =&gt; {
+  server.use(http.get('/api/orders', () =&gt; HttpResponse.error()));
+  render(&lt;OrdersPage /&gt;);
+  expect(await screen.findByRole('alert')).toHaveTextContent('Could not load orders');
+  await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
+});</code></pre><p><b>30-second answer:</b> “The URL owns filters; the query cache owns orders; the dialog owns temporary state. Query keys include filters, schemas protect the API boundary, and mutations invalidate canonical data. I test each observable async state. I would add Redux only for a shared client workflow such as offline drafts or a cross-route notification queue.”</p></details>
+        </div>
+      </section>
+
+      <section id="drills" class="section drills">
+        <p class="kicker">07 / INTERVIEW DRILLS</p><h2>Say the answer out loud.</h2>
+        <div class="accordion"><details open><summary>How do you choose Context, Redux, and TanStack Query?</summary><p>Classify ownership first. Context distributes stable dependencies or small subtree state. Redux Toolkit handles complex shared client workflows. Query tools handle backend-owned data. The URL handles shareable navigation state.</p></details><details><summary>How would you structure a growing React application?</summary><p>Feature boundaries, dependency direction, explicit public APIs, and a small app-composition layer. Centralize platform conventions, not every component.</p></details><details><summary>How do you lead code review?</summary><p>Prioritize correctness, security, behavior, architecture, and coverage before style. Make comments actionable, teach judgement, and encode recurring feedback into tooling and conventions.</p></details><details><summary>How would you plan this in Linear?</summary><p>Create thin vertical slices with acceptance criteria, identify risks and dependencies, record decisions, and use milestones to track outcomes rather than activity.</p></details></div>
+        <div class="closing"><p>One last reminder</p><h2>Be specific about trade-offs.<br>That is what makes an answer sound senior.</h2><a href="#top">Back to top ↑</a></div>
+      </section>
+    </main>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
